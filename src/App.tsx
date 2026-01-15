@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   CloudOff,
   CloudRain,
@@ -48,6 +48,9 @@ function App() {
   const [daily, setDaily] = useState<DailyForecast[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [isShaking, setIsShaking] = useState(false);
+  const shakeTimeoutRef = useRef<number | null>(null);
   const [unit] = useState<'metric' | 'imperial'>('metric');
   const [showOverlay, setShowOverlay] = useState(false);
   const [selectedDay, setSelectedDay] = useState<DailyForecast | null>(null);
@@ -90,11 +93,33 @@ function App() {
     fetchWeather(city, false);
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (shakeTimeoutRef.current) {
+        window.clearTimeout(shakeTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchInput.trim() && searchInput.trim().toLowerCase() !== city.toLowerCase()) {
-      fetchWeather(searchInput.trim(), true);
+    const trimmedInput = searchInput.trim();
+
+    if (!trimmedInput) {
+      setSearchError('Please enter a city name.');
+      setIsShaking(true);
+      if (shakeTimeoutRef.current) {
+        window.clearTimeout(shakeTimeoutRef.current);
+      }
+      shakeTimeoutRef.current = window.setTimeout(() => {
+        setIsShaking(false);
+      }, 450);
+      return;
     }
+
+    setSearchError(null);
+
+    fetchWeather(trimmedInput, true);
   };
 
   const handleOverlayComplete = useCallback(() => {
@@ -121,23 +146,33 @@ function App() {
               <ModeToggle />
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-start gap-2 pt-4">
             <form onSubmit={handleSearch} className="flex flex-1 gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Search city..."
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  className="w-full pl-9 sm:w-64"
-                />
+              <div className="flex flex-1 flex-col">
+                <div className={`relative ${isShaking ? 'animate-input-shake' : ''}`}>
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Search city..."
+                    value={searchInput}
+                    onChange={(e) => {
+                      setSearchInput(e.target.value);
+                      if (searchError) {
+                        setSearchError(null);
+                      }
+                    }}
+                    className="w-full pl-9 sm:w-64"
+                  />
+                </div>
+                <p className="mt-1 min-h-4 text-xs text-destructive">
+                  {searchError ?? ''}
+                </p>
               </div>
               <Button type="submit" disabled={loading} size="default">
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Search'}
               </Button>
             </form>
-            <div className="hidden sm:block">
+            <div className="hidden sm:block pt-0">
               <ModeToggle />
             </div>
           </div>
