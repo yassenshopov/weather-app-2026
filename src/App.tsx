@@ -28,6 +28,7 @@ import { LoadingOverlay } from '@/components/loading-overlay';
 import { DayDetailsDialog } from '@/components/day-details-dialog';
 import { getWeatherIcon } from '@/components/weather-icon';
 import Footer from '@/components/footer';
+import { SunArc } from '@/components/sun-arc';
 import { defaultSettings, type AppSettings } from '@/types/settings';
 import {
   get5DayForecast,
@@ -36,6 +37,7 @@ import {
   formatTemperature,
   formatWindSpeed,
   formatTime,
+  getLocalTime,
 } from '@/utils/weather';
 import { readSettingsCookie, writeSettingsCookie } from '@/utils/settings';
 import type { CurrentWeather, DailyForecast } from '@/types/weather';
@@ -62,6 +64,15 @@ function App() {
   const [settings, setSettings] = useState<AppSettings>(() => readSettingsCookie() ?? defaultSettings);
   const [showOverlay, setShowOverlay] = useState(false);
   const [selectedDay, setSelectedDay] = useState<DailyForecast | null>(null);
+  const [now, setNow] = useState(new Date());
+
+  // Update current time every 10 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNow(new Date());
+    }, 10000);
+    return () => clearInterval(timer);
+  }, []);
   const prevUnitRef = useRef(settings.unit);
 
   const unit = settings.unit;
@@ -370,6 +381,9 @@ function App() {
                 }
               }}
             >
+              {now <= current.sunset && (
+                <SunArc sunrise={current.sunrise} sunset={current.sunset} />
+              )}
               <div className="relative z-10 p-4 sm:p-6 md:p-8">
                 <div className="flex flex-col gap-4 sm:gap-6">
                   {/* Top Section */}
@@ -377,8 +391,12 @@ function App() {
                     <div>
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <MapPin className="h-4 w-4 sm:h-5 sm:w-5" />
-                      <span className="font-heading text-base font-medium sm:text-lg">
+                        <span className="font-heading text-base font-medium sm:text-lg">
                           {current.city}, {current.country}
+                        </span>
+                        <span className="text-muted-foreground/40">•</span>
+                        <span className="font-heading text-sm font-medium sm:text-base">
+                          {formatTime(getLocalTime(current.timezone, now), settings.timeFormat)}
                         </span>
                       </div>
                       <p className="mt-1 text-sm text-muted-foreground sm:text-base">Today, {today.dayName}</p>
@@ -445,7 +463,7 @@ function App() {
                       <div>
                         <p className="text-xs text-muted-foreground sm:text-sm">Sunrise</p>
                         <p className="font-heading text-sm font-semibold text-foreground sm:text-base">
-                          {formatTime(current.sunrise, settings.timeFormat)}
+                          {formatTime(getLocalTime(current.timezone, current.sunrise), settings.timeFormat)}
                         </p>
                       </div>
                     </div>
@@ -454,7 +472,7 @@ function App() {
                       <div>
                         <p className="text-xs text-muted-foreground sm:text-sm">Sunset</p>
                         <p className="font-heading text-sm font-semibold text-foreground sm:text-base">
-                          {formatTime(current.sunset, settings.timeFormat)}
+                          {formatTime(getLocalTime(current.timezone, current.sunset), settings.timeFormat)}
                         </p>
                       </div>
                     </div>

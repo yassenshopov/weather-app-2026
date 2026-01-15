@@ -83,4 +83,5 @@ export interface CurrentWeather {
   country: string;
   sunrise: Date;
   sunset: Date;
+  timezone: number;
 }

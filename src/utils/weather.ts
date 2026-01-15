@@ -59,6 +59,7 @@ export function processForecastData(data: ForecastResponse): {
     country: city.country,
     sunrise: new Date(city.sunrise * 1000),
     sunset: new Date(city.sunset * 1000),
+    timezone: city.timezone,
   };
   
   // Group forecast items by day
@@ -133,4 +134,10 @@ export function formatTime(date: Date, timeFormat: '12h' | '24h' = '12h'): strin
     minute: '2-digit',
     hour12: timeFormat === '12h',
   });
+}
+
+export function getLocalTime(timezoneOffset: number, date: Date = new Date()): Date {
+  // timezoneOffset is in seconds from UTC
+  const utc = date.getTime() + date.getTimezoneOffset() * 60000;
+  return new Date(utc + timezoneOffset * 1000);
 }
