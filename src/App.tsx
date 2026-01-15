@@ -11,7 +11,7 @@ import {
   Wind,
   Loader2,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import {
   Empty,
   EmptyHeader,
@@ -482,7 +482,7 @@ function App() {
             </Card>
 
             {/* Upcoming Days */}
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4 md:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
               {upcomingDays.map((day) => (
                 <Card
                   key={day.date.toISOString()}
@@ -497,50 +497,53 @@ function App() {
                     }
                   }}
                 >
-                  <CardHeader className="relative z-10 p-3 pb-1 sm:p-6 sm:pb-2">
-                    <div className="flex items-center justify-between gap-3 sm:flex-col sm:gap-1">
-                      <div className="text-left sm:text-center">
-                        <CardTitle className="font-heading text-base font-medium text-foreground sm:text-lg">
+                  <div className="relative z-10 flex h-full flex-col p-4 sm:p-6">
+                    {/* Header: Day and Date + Icon */}
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="font-heading text-lg font-bold text-foreground">
                           {day.dayName}
-                        </CardTitle>
-                        <p className="font-heading text-xs text-muted-foreground sm:text-sm">
+                        </h3>
+                        <p className="font-heading text-xs text-muted-foreground">
                           {day.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </p>
                       </div>
-                      <div className="flex items-center gap-3 text-primary sm:flex-col sm:gap-2">
-                        {getWeatherIcon(day.condition.id, 'h-8 w-8 sm:h-12 sm:w-12')}
-                        <div className="flex items-center gap-1 sm:flex-col sm:gap-2">
-                          <span className="font-heading text-lg font-semibold text-foreground sm:text-2xl">
-                            {formatTemperature(day.temp.max, unit)}
-                          </span>
-                          <span className="font-heading text-sm text-muted-foreground sm:text-lg">
-                            {formatTemperature(day.temp.min, unit)}
-                          </span>
-                        </div>
+                      <div className="text-primary">
+                        {getWeatherIcon(day.condition.id, 'h-10 w-10 sm:h-12 sm:w-12')}
                       </div>
                     </div>
-                  </CardHeader>
-                  <CardContent className="relative z-10 p-3 pt-0 sm:space-y-4 sm:p-6 sm:pt-0">
-                    <div className="flex items-center justify-between gap-3 sm:flex-col sm:gap-2">
-                      <p className="font-heading line-clamp-1 text-left text-xs capitalize text-muted-foreground sm:text-center sm:text-sm">
+
+                    {/* Middle: Temperatures and Description */}
+                    <div className="mt-4 flex flex-1 flex-col justify-center">
+                      <div className="flex items-baseline gap-2">
+                        <span className="font-heading text-2xl font-bold text-foreground sm:text-3xl">
+                          {formatTemperature(day.temp.max, unit)}
+                        </span>
+                        <span className="font-heading text-sm text-muted-foreground sm:text-base">
+                          {formatTemperature(day.temp.min, unit)}
+                        </span>
+                      </div>
+                      <p className="mt-1 font-heading text-sm capitalize text-muted-foreground line-clamp-1">
                         {day.condition.description}
                       </p>
-                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground sm:grid sm:grid-cols-2 sm:gap-2 sm:text-xs">
-                        <div className="flex items-center justify-center gap-1">
-                          <Droplets className="h-3 w-3" />
-                          <span className="font-heading">{day.humidity}%</span>
-                        </div>
-                        <div className="flex items-center justify-center gap-1">
-                          <Wind className="h-3 w-3" />
-                          <span className="font-heading">{formatWindSpeed(day.windSpeed, unit)}</span>
-                        </div>
+                    </div>
+
+                    {/* Bottom: Detailed Stats */}
+                    <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-2 border-t pt-4 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1.5">
+                        <Droplets className="h-3.5 w-3.5 text-primary/70" />
+                        <span className="font-heading">{day.humidity}%</span>
                       </div>
-                      <div className="flex items-center gap-1 text-[10px] text-primary sm:text-xs">
-                        <CloudRain className="h-3 w-3" />
-                        <span className="font-heading">{day.pop}% rain</span>
+                      <div className="flex items-center gap-1.5">
+                        <Wind className="h-3.5 w-3.5 text-primary/70" />
+                        <span className="font-heading text-[10px] sm:text-xs">{formatWindSpeed(day.windSpeed, unit)}</span>
+                      </div>
+                      <div className="col-span-2 flex items-center gap-1.5 text-primary">
+                        <CloudRain className="h-3.5 w-3.5" />
+                        <span className="font-heading font-medium">{day.pop}% precipitation</span>
                       </div>
                     </div>
-                  </CardContent>
+                  </div>
                 </Card>
               ))}
             </div>
