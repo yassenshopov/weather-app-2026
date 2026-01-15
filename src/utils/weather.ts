@@ -127,10 +127,10 @@ export function formatWindSpeed(speed: number, unit: 'metric' | 'imperial' = 'me
   return unit === 'metric' ? `${speed} m/s` : `${speed} mph`;
 }
 
-export function formatTime(date: Date): string {
+export function formatTime(date: Date, timeFormat: '12h' | '24h' = '12h'): string {
   return date.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
-    hour12: true,
+    hour12: timeFormat === '12h',
   });
 }

@@ -23,10 +23,12 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ModeToggle } from '@/components/mode-toggle';
+import { SettingsDialog } from '@/components/settings-dialog';
 import { LoadingOverlay } from '@/components/loading-overlay';
 import { DayDetailsDialog } from '@/components/day-details-dialog';
 import { getWeatherIcon } from '@/components/weather-icon';
 import Footer from '@/components/footer';
+import { defaultSettings, type AppSettings } from '@/types/settings';
 import {
   get5DayForecast,
   get5DayForecastByCoords,
@@ -35,6 +37,7 @@ import {
   formatWindSpeed,
   formatTime,
 } from '@/utils/weather';
+import { readSettingsCookie, writeSettingsCookie } from '@/utils/settings';
 import type { CurrentWeather, DailyForecast } from '@/types/weather';
 
 const STORAGE_KEY = 'weather-app-city';
@@ -56,9 +59,12 @@ function App() {
   const shakeTimeoutRef = useRef<number | null>(null);
   const didInitLocationRef = useRef(false);
   const [isLocating, setIsLocating] = useState(false);
-  const [unit] = useState<'metric' | 'imperial'>('metric');
+  const [settings, setSettings] = useState<AppSettings>(() => readSettingsCookie() ?? defaultSettings);
   const [showOverlay, setShowOverlay] = useState(false);
   const [selectedDay, setSelectedDay] = useState<DailyForecast | null>(null);
+  const prevUnitRef = useRef(settings.unit);
+
+  const unit = settings.unit;
 
   // Replace with your OpenWeatherMap API key
   const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY || 'YOUR_API_KEY_HERE';
@@ -185,8 +191,21 @@ function App() {
       return;
     }
     didInitLocationRef.current = true;
+
     requestLocation(city);
   }, [requestLocation, city]);
+
+  useEffect(() => {
+    writeSettingsCookie(settings);
+  }, [settings]);
+
+  useEffect(() => {
+    if (prevUnitRef.current === settings.unit) {
+      return;
+    }
+    prevUnitRef.current = settings.unit;
+    fetchWeather(city, false);
+  }, [settings.unit, fetchWeather, city]);
 
   useEffect(() => {
     return () => {
@@ -242,7 +261,7 @@ function App() {
           <div className="flex items-center justify-between">
             <h1 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">5-Day Weather Forecast</h1>
             <div className="sm:hidden">
-              <ModeToggle />
+              <SettingsDialog settings={settings} onSettingsChange={setSettings} />
             </div>
           </div>
           <div className="flex items-start gap-2 pt-4">
@@ -292,7 +311,10 @@ function App() {
               </p>
             </div>
             <div className="hidden sm:block pt-0">
-              <ModeToggle />
+              <div className="flex items-center gap-2">
+                <ModeToggle />
+                <SettingsDialog settings={settings} onSettingsChange={setSettings} />
+              </div>
             </div>
           </div>
         </div>
@@ -422,14 +444,18 @@ function App() {
                       <Sunrise className="h-5 w-5 text-primary sm:h-6 sm:w-6" />
                       <div>
                         <p className="text-xs text-muted-foreground sm:text-sm">Sunrise</p>
-                        <p className="font-heading text-sm font-semibold text-foreground sm:text-base">{formatTime(current.sunrise)}</p>
+                        <p className="font-heading text-sm font-semibold text-foreground sm:text-base">
+                          {formatTime(current.sunrise, settings.timeFormat)}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 rounded-lg border-0 bg-muted/50 p-2 sm:gap-3 sm:p-3">
                       <Sunset className="h-5 w-5 text-primary sm:h-6 sm:w-6" />
                       <div>
                         <p className="text-xs text-muted-foreground sm:text-sm">Sunset</p>
-                        <p className="font-heading text-sm font-semibold text-foreground sm:text-base">{formatTime(current.sunset)}</p>
+                        <p className="font-heading text-sm font-semibold text-foreground sm:text-base">
+                          {formatTime(current.sunset, settings.timeFormat)}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -438,7 +464,7 @@ function App() {
             </Card>
 
             {/* Upcoming Days */}
-            <div className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-4">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4 md:grid-cols-4">
               {upcomingDays.map((day) => (
                 <Card
                   key={day.date.toISOString()}
@@ -454,41 +480,47 @@ function App() {
                   }}
                 >
                   <CardHeader className="relative z-10 p-3 pb-1 sm:p-6 sm:pb-2">
-                    <CardTitle className="font-heading text-center text-base font-medium text-foreground sm:text-lg">
-                      {day.dayName}
-                    </CardTitle>
-                    <p className="font-heading text-center text-xs text-muted-foreground sm:text-sm">
-                      {day.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                    </p>
+                    <div className="flex items-center justify-between gap-3 sm:flex-col sm:gap-1">
+                      <div className="text-left sm:text-center">
+                        <CardTitle className="font-heading text-base font-medium text-foreground sm:text-lg">
+                          {day.dayName}
+                        </CardTitle>
+                        <p className="font-heading text-xs text-muted-foreground sm:text-sm">
+                          {day.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3 text-primary sm:flex-col sm:gap-2">
+                        {getWeatherIcon(day.condition.id, 'h-8 w-8 sm:h-12 sm:w-12')}
+                        <div className="flex items-center gap-1 sm:flex-col sm:gap-2">
+                          <span className="font-heading text-lg font-semibold text-foreground sm:text-2xl">
+                            {formatTemperature(day.temp.max, unit)}
+                          </span>
+                          <span className="font-heading text-sm text-muted-foreground sm:text-lg">
+                            {formatTemperature(day.temp.min, unit)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </CardHeader>
-                  <CardContent className="relative z-10 space-y-2 p-3 pt-0 sm:space-y-4 sm:p-6 sm:pt-0">
-                    <div className="flex justify-center text-primary">
-                      {getWeatherIcon(day.condition.id, 'h-8 w-8 sm:h-12 sm:w-12')}
-                    </div>
-                    <p className="font-heading line-clamp-1 text-center text-xs capitalize text-muted-foreground sm:text-sm">
-                      {day.condition.description}
-                    </p>
-                    <div className="flex items-center justify-center gap-1 sm:gap-2">
-                      <span className="font-heading text-lg font-semibold text-foreground sm:text-2xl">
-                        {formatTemperature(day.temp.max, unit)}
-                      </span>
-                      <span className="font-heading text-sm text-muted-foreground sm:text-lg">
-                        {formatTemperature(day.temp.min, unit)}
-                      </span>
-                    </div>
-                    <div className="flex justify-center gap-2 text-[10px] text-muted-foreground sm:grid sm:grid-cols-2 sm:gap-2 sm:text-xs">
-                      <div className="flex items-center justify-center gap-1">
-                        <Droplets className="h-3 w-3" />
-                        <span className="font-heading">{day.humidity}%</span>
+                  <CardContent className="relative z-10 p-3 pt-0 sm:space-y-4 sm:p-6 sm:pt-0">
+                    <div className="flex items-center justify-between gap-3 sm:flex-col sm:gap-2">
+                      <p className="font-heading line-clamp-1 text-left text-xs capitalize text-muted-foreground sm:text-center sm:text-sm">
+                        {day.condition.description}
+                      </p>
+                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground sm:grid sm:grid-cols-2 sm:gap-2 sm:text-xs">
+                        <div className="flex items-center justify-center gap-1">
+                          <Droplets className="h-3 w-3" />
+                          <span className="font-heading">{day.humidity}%</span>
+                        </div>
+                        <div className="flex items-center justify-center gap-1">
+                          <Wind className="h-3 w-3" />
+                          <span className="font-heading">{formatWindSpeed(day.windSpeed, unit)}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-center gap-1">
-                        <Wind className="h-3 w-3" />
-                        <span className="font-heading">{day.windSpeed} m/s</span>
+                      <div className="flex items-center gap-1 text-[10px] text-primary sm:text-xs">
+                        <CloudRain className="h-3 w-3" />
+                        <span className="font-heading">{day.pop}% rain</span>
                       </div>
-                    </div>
-                    <div className="flex items-center justify-center gap-1 text-[10px] text-primary sm:text-xs">
-                      <CloudRain className="h-3 w-3" />
-                      <span className="font-heading">{day.pop}% rain</span>
                     </div>
                   </CardContent>
                 </Card>
