@@ -1,21 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  Cloud,
-  CloudDrizzle,
-  CloudFog,
-  CloudLightning,
   CloudOff,
   CloudRain,
-  CloudSnow,
   Droplets,
   MapPin,
   Search,
-  Sun,
   Sunrise,
   Sunset,
   Thermometer,
   Wind,
-  CloudSun,
   Loader2,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,6 +25,7 @@ import { Button } from '@/components/ui/button';
 import { ModeToggle } from '@/components/mode-toggle';
 import { LoadingOverlay } from '@/components/loading-overlay';
 import { DayDetailsDialog } from '@/components/day-details-dialog';
+import { getWeatherIcon } from '@/components/weather-icon';
 import {
   get5DayForecast,
   processForecastData,
@@ -40,28 +34,6 @@ import {
   formatTime,
 } from '@/utils/weather';
 import type { CurrentWeather, DailyForecast } from '@/types/weather';
-
-// Map OpenWeatherMap condition codes to Lucide icons
-function getWeatherIcon(conditionId: number, className: string = 'h-8 w-8') {
-  // Weather condition codes: https://openweathermap.org/weather-conditions
-  if (conditionId >= 200 && conditionId < 300) {
-    return <CloudLightning className={className} />;
-  } else if (conditionId >= 300 && conditionId < 400) {
-    return <CloudDrizzle className={className} />;
-  } else if (conditionId >= 500 && conditionId < 600) {
-    return <CloudRain className={className} />;
-  } else if (conditionId >= 600 && conditionId < 700) {
-    return <CloudSnow className={className} />;
-  } else if (conditionId >= 700 && conditionId < 800) {
-    return <CloudFog className={className} />;
-  } else if (conditionId === 800) {
-    return <Sun className={className} />;
-  } else if (conditionId === 801) {
-    return <CloudSun className={className} />;
-  } else {
-    return <Cloud className={className} />;
-  }
-}
 
 const STORAGE_KEY = 'weather-app-city';
 
@@ -144,7 +116,7 @@ function App() {
         {/* Header with Search */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center justify-between">
-            <h1 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">Weather Forecast</h1>
+            <h1 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">5-Day Weather Forecast</h1>
             <div className="sm:hidden">
               <ModeToggle />
             </div>
