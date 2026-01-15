@@ -11,6 +11,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useTheme } from '@/components/theme-provider';
+import type { Theme } from '@/components/theme-provider';
 import type { AppSettings } from '@/types/settings';
 
 type SettingsDialogProps = {
@@ -53,7 +54,7 @@ export function SettingsDialog({ settings, onSettingsChange }: SettingsDialogPro
                 if (!value) {
                   return;
                 }
-                setTheme(value);
+                setTheme(value as Theme);
               }}
               className="justify-start"
             >
