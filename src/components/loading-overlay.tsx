@@ -43,8 +43,8 @@ function LoadingOverlay({
       )}
     >
       <div className="flex flex-col items-center gap-4">
-        <Spinner className="h-12 w-12 text-primary" />
-        <p className="text-lg font-medium text-foreground">{text}</p>
+        <Spinner className="h-16 w-16 text-primary" />
+        <p className="text-sm font-semibold text-foreground">{text}</p>
       </div>
     </div>
   );

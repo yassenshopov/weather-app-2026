@@ -27,6 +27,7 @@ import { SettingsDialog } from '@/components/settings-dialog';
 import { LoadingOverlay } from '@/components/loading-overlay';
 import { DayDetailsDialog } from '@/components/day-details-dialog';
 import { getWeatherIcon } from '@/components/weather-icon';
+import { WeatherIndicator } from '@/components/weather-indicator';
 import Footer from '@/components/footer';
 import { SunArc } from '@/components/sun-arc';
 import { defaultSettings, type AppSettings } from '@/types/settings';
@@ -263,7 +264,7 @@ function App() {
       <LoadingOverlay
         isVisible={showOverlay}
         duration={1500}
-        text="Updating weather for new location..."
+        text="Loading..."
         onComplete={handleOverlayComplete}
       />
       <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col space-y-6">
@@ -370,7 +371,7 @@ function App() {
           <>
             {/* Main Today Card */}
             <Card
-              className="relative cursor-pointer overflow-hidden bg-card transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="group relative cursor-pointer overflow-hidden bg-card transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               role="button"
               tabIndex={0}
               onClick={() => setSelectedDay(today)}
@@ -391,8 +392,14 @@ function App() {
                     <div>
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <MapPin className="h-4 w-4 sm:h-5 sm:w-5" />
-                        <span className="font-heading text-base font-medium sm:text-lg">
+                        <span className="font-heading flex items-center gap-2 text-base font-medium sm:text-lg">
                           {current.city}, {current.country}
+                          <img
+                            src={`https://flagcdn.com/w40/${current.country.toLowerCase()}.png`}
+                            alt=""
+                            className="h-3 w-auto rounded-[2px] shadow-sm sm:h-4"
+                            aria-hidden="true"
+                          />
                         </span>
                         <span className="text-muted-foreground/40">•</span>
                         <span className="font-heading text-sm font-medium sm:text-base">
@@ -401,7 +408,11 @@ function App() {
                       </div>
                       <p className="mt-1 text-sm text-muted-foreground sm:text-base">Today, {today.dayName}</p>
                     </div>
-                    <div className="text-primary">
+                    <div className="relative text-primary">
+                      <WeatherIndicator 
+                        conditionId={current.condition.id} 
+                        className="absolute left-1/4 top-3/4 -z-10 h-32 w-32 -translate-x-1/4 -translate-y-3/4 opacity-50 transition-all group-hover:opacity-40 sm:h-48 sm:w-48 md:h-64 md:w-64" 
+                      />
                       {getWeatherIcon(current.condition.id, 'h-12 w-12 sm:h-16 sm:w-16 md:h-24 md:w-24')}
                     </div>
                   </div>
@@ -486,7 +497,7 @@ function App() {
               {upcomingDays.map((day) => (
                 <Card
                   key={day.date.toISOString()}
-                  className="relative cursor-pointer overflow-hidden bg-card transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="group relative cursor-pointer overflow-hidden bg-card transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   role="button"
                   tabIndex={0}
                   onClick={() => setSelectedDay(day)}
@@ -508,7 +519,11 @@ function App() {
                           {day.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </p>
                       </div>
-                      <div className="text-primary">
+                      <div className="relative text-primary">
+                        <WeatherIndicator 
+                          conditionId={day.condition.id} 
+                          className="absolute left-2/3 top-1/4 -z-10 h-24 w-24 -translate-x-1/2 -translate-y-[50%] opacity-50 transition-all group-hover:opacity-40 sm:h-32 sm:w-32" 
+                        />
                         {getWeatherIcon(day.condition.id, 'h-10 w-10 sm:h-12 sm:w-12')}
                       </div>
                     </div>

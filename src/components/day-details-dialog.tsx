@@ -1,6 +1,7 @@
 import { Droplets, Wind, CloudRain } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { getWeatherIcon } from '@/components/weather-icon';
+import { WeatherIndicator } from '@/components/weather-indicator';
 import type { DailyForecast } from '@/types/weather';
 import { formatTemperature, formatWindSpeed } from '@/utils/weather';
 
@@ -27,9 +28,13 @@ export function DayDetailsDialog({ day, unit, onClose }: DayDetailsDialogProps) 
         <div className="relative">
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute right-8 top-1/2 -translate-y-1/2 translate-x-6 text-primary opacity-10"
+            className="pointer-events-none absolute right-8 top-1/3 -translate-y-1/2 translate-x-6 text-primary opacity-50"
           >
-            {getWeatherIcon(day.condition.id, 'h-56 w-56 sm:h-64 sm:w-64')}
+            <WeatherIndicator 
+              conditionId={day.condition.id} 
+              className="absolute left-1/2 top-1/2 -z-10 h-[30rem] w-[30rem] -translate-x-1/4 -translate-y-3/4 opacity-50 sm:h-[40rem] sm:w-[40rem]" 
+            />
+            {getWeatherIcon(day.condition.id, 'h-56 w-56 sm:h-48 sm:w-48')}
           </div>
 
           <div className="relative z-10">
