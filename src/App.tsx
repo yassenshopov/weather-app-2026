@@ -31,6 +31,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ModeToggle } from '@/components/mode-toggle';
 import { LoadingOverlay } from '@/components/loading-overlay';
+import { DayDetailsDialog } from '@/components/day-details-dialog';
 import {
   get5DayForecast,
   processForecastData,
@@ -77,6 +78,7 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [unit] = useState<'metric' | 'imperial'>('metric');
   const [showOverlay, setShowOverlay] = useState(false);
+  const [selectedDay, setSelectedDay] = useState<DailyForecast | null>(null);
 
   // Replace with your OpenWeatherMap API key
   const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY || 'YOUR_API_KEY_HERE';
@@ -101,6 +103,7 @@ function App() {
       const processed = processForecastData(data);
       setCurrent(processed.current);
       setDaily(processed.daily);
+      setSelectedDay(null);
       setCity(cityName);
       localStorage.setItem(STORAGE_KEY, cityName);
     } catch (err) {
@@ -141,7 +144,7 @@ function App() {
         {/* Header with Search */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-foreground sm:text-3xl">Weather Forecast</h1>
+            <h1 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">Weather Forecast</h1>
             <div className="sm:hidden">
               <ModeToggle />
             </div>
@@ -207,7 +210,18 @@ function App() {
         {!loading && !error && current && today && (
           <>
             {/* Main Today Card */}
-            <Card className="overflow-hidden border bg-card">
+            <Card
+              className="cursor-pointer overflow-hidden border bg-card transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              role="button"
+              tabIndex={0}
+              onClick={() => setSelectedDay(today)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  setSelectedDay(today);
+                }
+              }}
+            >
               <div className="p-4 sm:p-6 md:p-8">
                 <div className="flex flex-col gap-4 sm:gap-6">
                   {/* Top Section */}
@@ -215,7 +229,7 @@ function App() {
                     <div>
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <MapPin className="h-4 w-4 sm:h-5 sm:w-5" />
-                        <span className="text-base font-medium sm:text-lg">
+                      <span className="font-heading text-base font-medium sm:text-lg">
                           {current.city}, {current.country}
                         </span>
                       </div>
@@ -229,10 +243,10 @@ function App() {
                   {/* Middle Section - Temperature */}
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <div className="text-5xl font-light text-foreground sm:text-7xl md:text-9xl">
+                      <div className="font-heading text-5xl font-light text-foreground sm:text-7xl md:text-9xl">
                         {formatTemperature(current.temp, unit)}
                       </div>
-                      <p className="mt-1 text-lg capitalize text-muted-foreground sm:mt-2 sm:text-xl md:text-2xl">
+                      <p className="font-heading mt-1 text-lg capitalize text-muted-foreground sm:mt-2 sm:text-xl md:text-2xl">
                         {current.condition.description}
                       </p>
                     </div>
@@ -240,10 +254,10 @@ function App() {
                     <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm sm:hidden">
                       <div className="flex items-center gap-1 text-foreground">
                         <Thermometer className="h-4 w-4 text-muted-foreground" />
-                        <span>Feels like {formatTemperature(current.feels_like, unit)}</span>
+                        <span className="font-heading">Feels like {formatTemperature(current.feels_like, unit)}</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <span className="text-muted-foreground">
+                        <span className="font-heading text-muted-foreground">
                           H: {formatTemperature(today.temp.max, unit)} / L: {formatTemperature(today.temp.min, unit)}
                         </span>
                       </div>
@@ -251,10 +265,10 @@ function App() {
                     <div className="hidden space-y-3 text-right sm:block">
                       <div className="flex items-center justify-end gap-2 text-foreground">
                         <Thermometer className="h-5 w-5 text-muted-foreground" />
-                        <span>Feels like {formatTemperature(current.feels_like, unit)}</span>
+                        <span className="font-heading">Feels like {formatTemperature(current.feels_like, unit)}</span>
                       </div>
                       <div className="flex items-center justify-end gap-2">
-                        <span className="text-sm text-muted-foreground">
+                        <span className="font-heading text-sm text-muted-foreground">
                           H: {formatTemperature(today.temp.max, unit)} / L:{' '}
                           {formatTemperature(today.temp.min, unit)}
                         </span>
@@ -268,28 +282,28 @@ function App() {
                       <Wind className="h-5 w-5 text-primary sm:h-6 sm:w-6" />
                       <div>
                         <p className="text-xs text-muted-foreground sm:text-sm">Wind</p>
-                        <p className="text-sm font-semibold text-foreground sm:text-base">{formatWindSpeed(current.windSpeed, unit)}</p>
+                        <p className="font-heading text-sm font-semibold text-foreground sm:text-base">{formatWindSpeed(current.windSpeed, unit)}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-2 sm:gap-3 sm:p-3">
                       <Droplets className="h-5 w-5 text-primary sm:h-6 sm:w-6" />
                       <div>
                         <p className="text-xs text-muted-foreground sm:text-sm">Humidity</p>
-                        <p className="text-sm font-semibold text-foreground sm:text-base">{current.humidity}%</p>
+                        <p className="font-heading text-sm font-semibold text-foreground sm:text-base">{current.humidity}%</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-2 sm:gap-3 sm:p-3">
                       <Sunrise className="h-5 w-5 text-primary sm:h-6 sm:w-6" />
                       <div>
                         <p className="text-xs text-muted-foreground sm:text-sm">Sunrise</p>
-                        <p className="text-sm font-semibold text-foreground sm:text-base">{formatTime(current.sunrise)}</p>
+                        <p className="font-heading text-sm font-semibold text-foreground sm:text-base">{formatTime(current.sunrise)}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-2 sm:gap-3 sm:p-3">
                       <Sunset className="h-5 w-5 text-primary sm:h-6 sm:w-6" />
                       <div>
                         <p className="text-xs text-muted-foreground sm:text-sm">Sunset</p>
-                        <p className="text-sm font-semibold text-foreground sm:text-base">{formatTime(current.sunset)}</p>
+                        <p className="font-heading text-sm font-semibold text-foreground sm:text-base">{formatTime(current.sunset)}</p>
                       </div>
                     </div>
                   </div>
@@ -302,13 +316,22 @@ function App() {
               {upcomingDays.map((day) => (
                 <Card
                   key={day.date.toISOString()}
-                  className="border bg-card transition-colors hover:bg-accent"
+                  className="cursor-pointer border bg-card transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setSelectedDay(day)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      setSelectedDay(day);
+                    }
+                  }}
                 >
                   <CardHeader className="p-3 pb-1 sm:p-6 sm:pb-2">
-                    <CardTitle className="text-center text-base font-medium text-foreground sm:text-lg">
+                    <CardTitle className="font-heading text-center text-base font-medium text-foreground sm:text-lg">
                       {day.dayName}
                     </CardTitle>
-                    <p className="text-center text-xs text-muted-foreground sm:text-sm">
+                    <p className="font-heading text-center text-xs text-muted-foreground sm:text-sm">
                       {day.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </p>
                   </CardHeader>
@@ -316,33 +339,31 @@ function App() {
                     <div className="flex justify-center text-primary">
                       {getWeatherIcon(day.condition.id, 'h-8 w-8 sm:h-12 sm:w-12')}
                     </div>
-                    <p className="line-clamp-1 text-center text-xs capitalize text-muted-foreground sm:text-sm">
+                    <p className="font-heading line-clamp-1 text-center text-xs capitalize text-muted-foreground sm:text-sm">
                       {day.condition.description}
                     </p>
                     <div className="flex items-center justify-center gap-1 sm:gap-2">
-                      <span className="text-lg font-semibold text-foreground sm:text-2xl">
+                      <span className="font-heading text-lg font-semibold text-foreground sm:text-2xl">
                         {formatTemperature(day.temp.max, unit)}
                       </span>
-                      <span className="text-sm text-muted-foreground sm:text-lg">
+                      <span className="font-heading text-sm text-muted-foreground sm:text-lg">
                         {formatTemperature(day.temp.min, unit)}
                       </span>
                     </div>
                     <div className="flex justify-center gap-2 text-[10px] text-muted-foreground sm:grid sm:grid-cols-2 sm:gap-2 sm:text-xs">
                       <div className="flex items-center justify-center gap-1">
                         <Droplets className="h-3 w-3" />
-                        <span>{day.humidity}%</span>
+                        <span className="font-heading">{day.humidity}%</span>
                       </div>
                       <div className="flex items-center justify-center gap-1">
                         <Wind className="h-3 w-3" />
-                        <span>{day.windSpeed} m/s</span>
+                        <span className="font-heading">{day.windSpeed} m/s</span>
                       </div>
                     </div>
-                    {day.pop > 0 && (
-                      <div className="flex items-center justify-center gap-1 text-[10px] text-primary sm:text-xs">
-                        <CloudRain className="h-3 w-3" />
-                        <span>{day.pop}% rain</span>
-                      </div>
-                    )}
+                    <div className="flex items-center justify-center gap-1 text-[10px] text-primary sm:text-xs">
+                      <CloudRain className="h-3 w-3" />
+                      <span className="font-heading">{day.pop}% rain</span>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
@@ -350,6 +371,11 @@ function App() {
           </>
         )}
 
+        <DayDetailsDialog
+          day={selectedDay}
+          unit={unit}
+          onClose={() => setSelectedDay(null)}
+        />
       </div>
     </div>
   );
