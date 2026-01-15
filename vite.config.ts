@@ -4,6 +4,7 @@ import path from 'node:path'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/weather-app-2026/',
   plugins: [react()],
   resolve: {
     alias: {
