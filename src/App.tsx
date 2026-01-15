@@ -131,10 +131,15 @@ function App() {
       <div className="mx-auto max-w-5xl space-y-6">
         {/* Header with Search */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-3xl font-bold text-foreground">Weather Forecast</h1>
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-foreground sm:text-3xl">Weather Forecast</h1>
+            <div className="sm:hidden">
+              <ModeToggle />
+            </div>
+          </div>
           <div className="flex items-center gap-2">
-            <form onSubmit={handleSearch} className="flex gap-2">
-              <div className="relative">
+            <form onSubmit={handleSearch} className="flex flex-1 gap-2">
+              <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   type="text"
@@ -144,11 +149,13 @@ function App() {
                   className="w-full pl-9 sm:w-64"
                 />
               </div>
-              <Button type="submit" disabled={loading}>
+              <Button type="submit" disabled={loading} size="default">
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Search'}
               </Button>
             </form>
-            <ModeToggle />
+            <div className="hidden sm:block">
+              <ModeToggle />
+            </div>
           </div>
         </div>
 
@@ -171,37 +178,49 @@ function App() {
         {/* Weather Content */}
         {!loading && !error && current && today && (
           <>
-            {/* Main Today Card - 16:9 Aspect Ratio */}
+            {/* Main Today Card */}
             <Card className="overflow-hidden border bg-card">
-              <div className="aspect-video p-6 md:p-8">
-                <div className="flex h-full flex-col justify-between">
+              <div className="p-4 sm:p-6 md:p-8">
+                <div className="flex flex-col gap-4 sm:gap-6">
                   {/* Top Section */}
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="flex items-center gap-2 text-muted-foreground">
-                        <MapPin className="h-5 w-5" />
-                        <span className="text-lg font-medium">
+                        <MapPin className="h-4 w-4 sm:h-5 sm:w-5" />
+                        <span className="text-base font-medium sm:text-lg">
                           {current.city}, {current.country}
                         </span>
                       </div>
-                      <p className="mt-1 text-muted-foreground">Today, {today.dayName}</p>
+                      <p className="mt-1 text-sm text-muted-foreground sm:text-base">Today, {today.dayName}</p>
                     </div>
                     <div className="text-primary">
-                      {getWeatherIcon(current.condition.id, 'h-16 w-16 md:h-24 md:w-24')}
+                      {getWeatherIcon(current.condition.id, 'h-12 w-12 sm:h-16 sm:w-16 md:h-24 md:w-24')}
                     </div>
                   </div>
 
                   {/* Middle Section - Temperature */}
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <div className="text-7xl font-light text-foreground md:text-9xl">
+                      <div className="text-5xl font-light text-foreground sm:text-7xl md:text-9xl">
                         {formatTemperature(current.temp, unit)}
                       </div>
-                      <p className="mt-2 text-xl capitalize text-muted-foreground md:text-2xl">
+                      <p className="mt-1 text-lg capitalize text-muted-foreground sm:mt-2 sm:text-xl md:text-2xl">
                         {current.condition.description}
                       </p>
                     </div>
-                    <div className="hidden space-y-3 text-right md:block">
+                    {/* Mobile: Show inline, Desktop: Show on right */}
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm sm:hidden">
+                      <div className="flex items-center gap-1 text-foreground">
+                        <Thermometer className="h-4 w-4 text-muted-foreground" />
+                        <span>Feels like {formatTemperature(current.feels_like, unit)}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-muted-foreground">
+                          H: {formatTemperature(today.temp.max, unit)} / L: {formatTemperature(today.temp.min, unit)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="hidden space-y-3 text-right sm:block">
                       <div className="flex items-center justify-end gap-2 text-foreground">
                         <Thermometer className="h-5 w-5 text-muted-foreground" />
                         <span>Feels like {formatTemperature(current.feels_like, unit)}</span>
@@ -216,33 +235,33 @@ function App() {
                   </div>
 
                   {/* Bottom Section - Stats */}
-                  <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                    <div className="flex items-center gap-3 rounded-lg border bg-muted/50 p-3">
-                      <Wind className="h-6 w-6 text-primary" />
+                  <div className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-4">
+                    <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-2 sm:gap-3 sm:p-3">
+                      <Wind className="h-5 w-5 text-primary sm:h-6 sm:w-6" />
                       <div>
-                        <p className="text-sm text-muted-foreground">Wind</p>
-                        <p className="font-semibold text-foreground">{formatWindSpeed(current.windSpeed, unit)}</p>
+                        <p className="text-xs text-muted-foreground sm:text-sm">Wind</p>
+                        <p className="text-sm font-semibold text-foreground sm:text-base">{formatWindSpeed(current.windSpeed, unit)}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 rounded-lg border bg-muted/50 p-3">
-                      <Droplets className="h-6 w-6 text-primary" />
+                    <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-2 sm:gap-3 sm:p-3">
+                      <Droplets className="h-5 w-5 text-primary sm:h-6 sm:w-6" />
                       <div>
-                        <p className="text-sm text-muted-foreground">Humidity</p>
-                        <p className="font-semibold text-foreground">{current.humidity}%</p>
+                        <p className="text-xs text-muted-foreground sm:text-sm">Humidity</p>
+                        <p className="text-sm font-semibold text-foreground sm:text-base">{current.humidity}%</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 rounded-lg border bg-muted/50 p-3">
-                      <Sunrise className="h-6 w-6 text-primary" />
+                    <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-2 sm:gap-3 sm:p-3">
+                      <Sunrise className="h-5 w-5 text-primary sm:h-6 sm:w-6" />
                       <div>
-                        <p className="text-sm text-muted-foreground">Sunrise</p>
-                        <p className="font-semibold text-foreground">{formatTime(current.sunrise)}</p>
+                        <p className="text-xs text-muted-foreground sm:text-sm">Sunrise</p>
+                        <p className="text-sm font-semibold text-foreground sm:text-base">{formatTime(current.sunrise)}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 rounded-lg border bg-muted/50 p-3">
-                      <Sunset className="h-6 w-6 text-primary" />
+                    <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-2 sm:gap-3 sm:p-3">
+                      <Sunset className="h-5 w-5 text-primary sm:h-6 sm:w-6" />
                       <div>
-                        <p className="text-sm text-muted-foreground">Sunset</p>
-                        <p className="font-semibold text-foreground">{formatTime(current.sunset)}</p>
+                        <p className="text-xs text-muted-foreground sm:text-sm">Sunset</p>
+                        <p className="text-sm font-semibold text-foreground sm:text-base">{formatTime(current.sunset)}</p>
                       </div>
                     </div>
                   </div>
@@ -251,36 +270,36 @@ function App() {
             </Card>
 
             {/* Upcoming Days */}
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-4">
               {upcomingDays.map((day) => (
                 <Card
                   key={day.date.toISOString()}
                   className="border bg-card transition-colors hover:bg-accent"
                 >
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-center text-lg font-medium text-foreground">
+                  <CardHeader className="p-3 pb-1 sm:p-6 sm:pb-2">
+                    <CardTitle className="text-center text-base font-medium text-foreground sm:text-lg">
                       {day.dayName}
                     </CardTitle>
-                    <p className="text-center text-sm text-muted-foreground">
+                    <p className="text-center text-xs text-muted-foreground sm:text-sm">
                       {day.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </p>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-2 p-3 pt-0 sm:space-y-4 sm:p-6 sm:pt-0">
                     <div className="flex justify-center text-primary">
-                      {getWeatherIcon(day.condition.id, 'h-12 w-12')}
+                      {getWeatherIcon(day.condition.id, 'h-8 w-8 sm:h-12 sm:w-12')}
                     </div>
-                    <p className="text-center text-sm capitalize text-muted-foreground">
+                    <p className="line-clamp-1 text-center text-xs capitalize text-muted-foreground sm:text-sm">
                       {day.condition.description}
                     </p>
-                    <div className="flex items-center justify-center gap-2">
-                      <span className="text-2xl font-semibold text-foreground">
+                    <div className="flex items-center justify-center gap-1 sm:gap-2">
+                      <span className="text-lg font-semibold text-foreground sm:text-2xl">
                         {formatTemperature(day.temp.max, unit)}
                       </span>
-                      <span className="text-lg text-muted-foreground">
+                      <span className="text-sm text-muted-foreground sm:text-lg">
                         {formatTemperature(day.temp.min, unit)}
                       </span>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                    <div className="flex justify-center gap-2 text-[10px] text-muted-foreground sm:grid sm:grid-cols-2 sm:gap-2 sm:text-xs">
                       <div className="flex items-center justify-center gap-1">
                         <Droplets className="h-3 w-3" />
                         <span>{day.humidity}%</span>
@@ -291,9 +310,9 @@ function App() {
                       </div>
                     </div>
                     {day.pop > 0 && (
-                      <div className="flex items-center justify-center gap-1 text-xs text-primary">
+                      <div className="flex items-center justify-center gap-1 text-[10px] text-primary sm:text-xs">
                         <CloudRain className="h-3 w-3" />
-                        <span>{day.pop}% chance of rain</span>
+                        <span>{day.pop}% rain</span>
                       </div>
                     )}
                   </CardContent>
