@@ -26,6 +26,9 @@ function LoadingOverlay({
       }, duration);
 
       return () => clearTimeout(timer);
+    } else {
+      // Hide overlay immediately when isVisible becomes false (e.g., on error)
+      setShow(false);
     }
   }, [isVisible, duration, onComplete]);
 

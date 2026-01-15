@@ -4,6 +4,7 @@ import {
   CloudDrizzle,
   CloudFog,
   CloudLightning,
+  CloudOff,
   CloudRain,
   CloudSnow,
   Droplets,
@@ -18,6 +19,14 @@ import {
   Loader2,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+  EmptyContent,
+} from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ModeToggle } from '@/components/mode-toggle';
@@ -160,12 +169,31 @@ function App() {
         </div>
 
         {/* Error State */}
-        {error && (
-          <Card className="border-destructive bg-destructive/10">
-            <CardContent className="py-4 text-center text-destructive">
-              {error}
-            </CardContent>
-          </Card>
+        {error && !loading && (
+          <Empty className="py-16 md:py-24">
+            <EmptyHeader>
+              <EmptyMedia>
+                <CloudOff className="h-16 w-16 text-muted-foreground" />
+              </EmptyMedia>
+              <EmptyTitle>Unable to find weather data</EmptyTitle>
+              <EmptyDescription>
+                {error.includes('city not found') || error.includes('404')
+                  ? `We couldn't find a city matching "${searchInput}". Please check the spelling and try again.`
+                  : error}
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSearchInput(city);
+                  setError(null);
+                }}
+              >
+                Go back to "{city}"
+              </Button>
+            </EmptyContent>
+          </Empty>
         )}
 
         {/* Loading State */}
