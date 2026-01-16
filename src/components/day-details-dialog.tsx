@@ -29,13 +29,13 @@ export function DayDetailsDialog({ day, unit, location, onClose }: DayDetailsDia
         <div className="relative flex flex-1 flex-col">
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute right-8 top-1/3 -translate-y-1/2 translate-x-6 text-primary opacity-50"
+            className="pointer-events-none absolute -right-4 top-0 -translate-y-1/4 text-primary opacity-50 sm:right-8 sm:top-1/3 sm:-translate-y-1/2"
           >
             <WeatherIndicator 
               conditionId={day.condition.id} 
-              className="absolute left-1/2 top-1/2 -z-10 h-[30rem] w-[30rem] -translate-x-1/4 -translate-y-3/4 opacity-50 sm:h-[40rem] sm:w-[40rem]" 
+              className="absolute left-1/2 top-1/2 -z-10 h-[12rem] w-[12rem] -translate-x-1/4 -translate-y-3/4 opacity-50 sm:h-[40rem] sm:w-[40rem]" 
             />
-            {getWeatherIcon(day.condition.id, 'h-56 w-56 sm:h-48 sm:w-48')}
+            {getWeatherIcon(day.condition.id, 'h-10 w-10 sm:h-48 sm:w-48')}
           </div>
 
           <div className="relative z-10 flex flex-1 flex-col">
