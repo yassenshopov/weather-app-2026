@@ -10,6 +10,9 @@ import {
   Thermometer,
   Wind,
   Loader2,
+  ChevronDown,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import {
@@ -22,6 +25,14 @@ import {
 } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { ModeToggle } from '@/components/mode-toggle';
 import { SettingsDialog } from '@/components/settings-dialog';
 import { LoadingOverlay } from '@/components/loading-overlay';
@@ -44,6 +55,54 @@ import { readSettingsCookie, writeSettingsCookie } from '@/utils/settings';
 import type { CurrentWeather, DailyForecast } from '@/types/weather';
 
 const STORAGE_KEY = 'weather-app-city';
+const RECENT_CITIES_KEY = 'weather-app-recent-cities';
+const RECENT_CITY_LIMIT = 5;
+
+type RecentCity = {
+  city: string;
+  country: string;
+};
+
+const readRecentCities = (): RecentCity[] => {
+  if (typeof localStorage === 'undefined') {
+    return [];
+  }
+  try {
+    const raw = localStorage.getItem(RECENT_CITIES_KEY);
+    if (!raw) {
+      return [];
+    }
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+    return parsed
+      .map((item) => {
+        if (typeof item === 'string') {
+          return { city: item, country: '' };
+        }
+        if (item && typeof item === 'object') {
+          const maybeCity = typeof item.city === 'string' ? item.city : '';
+          const maybeCountry = typeof item.country === 'string' ? item.country : '';
+          if (!maybeCity) {
+            return null;
+          }
+          return { city: maybeCity, country: maybeCountry };
+        }
+        return null;
+      })
+      .filter((item): item is RecentCity => Boolean(item?.city));
+  } catch {
+    return [];
+  }
+};
+
+const writeRecentCities = (cities: RecentCity[]) => {
+  if (typeof localStorage === 'undefined') {
+    return;
+  }
+  localStorage.setItem(RECENT_CITIES_KEY, JSON.stringify(cities));
+};
 
 function App() {
   const [city, setCity] = useState(() => {
@@ -66,6 +125,7 @@ function App() {
   const [showOverlay, setShowOverlay] = useState(false);
   const [selectedDay, setSelectedDay] = useState<DailyForecast | null>(null);
   const [now, setNow] = useState(new Date());
+  const [recentCities, setRecentCities] = useState<RecentCity[]>(() => readRecentCities());
 
   // Update current time every 10 seconds
   useEffect(() => {
@@ -80,6 +140,21 @@ function App() {
 
   // Replace with your OpenWeatherMap API key
   const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY || 'YOUR_API_KEY_HERE';
+
+  const addRecentCity = useCallback((cityName: string, country: string) => {
+    const normalized = cityName.trim();
+    if (!normalized) {
+      return;
+    }
+    setRecentCities((prev) => {
+      const next = [
+        { city: normalized, country },
+        ...prev.filter((item) => item.city.toLowerCase() !== normalized.toLowerCase()),
+      ].slice(0, RECENT_CITY_LIMIT);
+      writeRecentCities(next);
+      return next;
+    });
+  }, []);
 
   const fetchWeather = useCallback(async (cityName: string, isLocationChange: boolean = false) => {
     if (!API_KEY || API_KEY === 'YOUR_API_KEY_HERE') {
@@ -99,19 +174,22 @@ function App() {
     try {
       const data = await get5DayForecast(cityName, API_KEY, unit);
       const processed = processForecastData(data);
+      const resolvedCity = processed.current.city || cityName;
+      const resolvedCountry = processed.current.country || '';
       setCurrent(processed.current);
       setDaily(processed.daily);
       setSelectedDay(null);
-      setCity(cityName);
-      setSearchInput(cityName);
-      localStorage.setItem(STORAGE_KEY, cityName);
+      setCity(resolvedCity);
+      setSearchInput(resolvedCity);
+      localStorage.setItem(STORAGE_KEY, resolvedCity);
+      addRecentCity(resolvedCity, resolvedCountry);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch weather data');
       setShowOverlay(false);
     } finally {
       setLoading(false);
     }
-  }, [API_KEY, unit]);
+  }, [API_KEY, unit, addRecentCity]);
 
   const fetchWeatherByCoords = useCallback(async (lat: number, lon: number) => {
     if (!API_KEY || API_KEY === 'YOUR_API_KEY_HERE') {
@@ -129,19 +207,21 @@ function App() {
       const data = await get5DayForecastByCoords(lat, lon, API_KEY, unit);
       const processed = processForecastData(data);
       const resolvedCity = processed.current.city;
+      const resolvedCountry = processed.current.country || '';
       setCurrent(processed.current);
       setDaily(processed.daily);
       setSelectedDay(null);
       setCity(resolvedCity);
       setSearchInput(resolvedCity);
       localStorage.setItem(STORAGE_KEY, resolvedCity);
+      addRecentCity(resolvedCity, resolvedCountry);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch weather data');
       setShowOverlay(false);
     } finally {
       setLoading(false);
     }
-  }, [API_KEY, unit]);
+  }, [API_KEY, unit, addRecentCity]);
 
   const requestLocation = useCallback((fallbackCityName?: string) => {
     setLocationError(null);
@@ -292,8 +372,57 @@ function App() {
                           setSearchError(null);
                         }
                       }}
-                      className="w-full pl-9 sm:w-64"
+                      className="w-full pl-9 pr-10 sm:w-64"
                     />
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 gap-0.5"
+                          disabled={recentCities.length === 0}
+                          aria-label="Recent searches"
+                        >
+                          <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-56">
+                        <DropdownMenuLabel className="text-xs">Recent searches</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        {recentCities.length === 0 ? (
+                          <DropdownMenuItem disabled>No recent searches</DropdownMenuItem>
+                        ) : (
+                          recentCities.map((recentCity) => (
+                            <DropdownMenuItem
+                              key={`${recentCity.city}-${recentCity.country}`}
+                              onSelect={() => {
+                                const query = recentCity.country
+                                  ? `${recentCity.city}, ${recentCity.country}`
+                                  : recentCity.city;
+                                setSearchInput(query);
+                                setSearchError(null);
+                                fetchWeather(query, true);
+                              }}
+                            >
+                              <span className="flex items-center gap-2">
+                                {recentCity.country ? (
+                                  <img
+                                    src={`https://flagcdn.com/w40/${recentCity.country.toLowerCase()}.png`}
+                                    alt=""
+                                    className="h-3 w-auto rounded-[2px] shadow-sm"
+                                  />
+                                ) : null}
+                                <span>
+                                  {recentCity.city}
+                                  {recentCity.country ? `, ${recentCity.country}` : ''}
+                                </span>
+                              </span>
+                            </DropdownMenuItem>
+                          ))
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                   <p className="mt-1 min-h-4 text-xs text-destructive">
                     {searchError ?? ''}
@@ -409,48 +538,36 @@ function App() {
                       <p className="mt-1 text-sm text-muted-foreground sm:text-base">Today, {today.dayName}</p>
                     </div>
                     <div className="relative text-primary">
-                      <WeatherIndicator 
-                        conditionId={current.condition.id} 
-                        className="absolute left-1/4 top-3/4 -z-10 h-32 w-32 -translate-x-1/4 -translate-y-3/4 opacity-50 transition-all group-hover:opacity-40 sm:h-48 sm:w-48 md:h-64 md:w-64" 
+                      <WeatherIndicator
+                        conditionId={today.condition.id}
+                        className="absolute left-1/4 top-3/4 -z-10 h-32 w-32 -translate-x-1/4 -translate-y-3/4 opacity-50 transition-all group-hover:opacity-40 sm:h-48 sm:w-48 md:h-64 md:w-64"
                       />
-                      {getWeatherIcon(current.condition.id, 'h-12 w-12 sm:h-16 sm:w-16 md:h-24 md:w-24')}
+                      {getWeatherIcon(today.condition.id, 'h-12 w-12 sm:h-16 sm:w-16 md:h-24 md:w-24')}
                     </div>
                   </div>
 
                   {/* Middle Section - Temperature */}
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <div className="font-heading text-5xl font-light text-foreground sm:text-7xl md:text-9xl">
-                        {formatTemperature(current.temp, unit)}
-                      </div>
-                      <p className="font-heading mt-1 text-lg capitalize text-muted-foreground sm:mt-2 sm:text-xl md:text-2xl">
-                        {current.condition.description}
-                      </p>
+                  <div className="flex flex-col gap-3">
+                    <div className="inline-flex self-start items-center gap-3 text-sm sm:text-base">
+                      <span className="inline-flex items-center gap-1 font-heading">
+                        <ArrowUp className="h-4 w-4 text-orange-500" />
+                        <span className="font-semibold text-foreground">{formatTemperature(today.temp.max, unit)}</span>
+                      </span>
+                      <span className="inline-flex items-center gap-1 font-heading">
+                        <ArrowDown className="h-4 w-4 text-sky-500" />
+                        <span className="font-semibold text-foreground">{formatTemperature(today.temp.min, unit)}</span>
+                      </span>
                     </div>
-                    {/* Mobile: Show inline, Desktop: Show on right */}
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm sm:hidden">
-                      <div className="flex items-center gap-1 text-foreground">
-                        <Thermometer className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-heading">Feels like {formatTemperature(current.feels_like, unit)}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span className="font-heading text-muted-foreground">
-                          H: {formatTemperature(today.temp.max, unit)} / L: {formatTemperature(today.temp.min, unit)}
-                        </span>
-                      </div>
+                    <div className="font-heading text-5xl font-light text-foreground sm:text-7xl md:text-9xl">
+                      {formatTemperature(current.temp, unit)}
                     </div>
-                    <div className="hidden space-y-3 text-right sm:block">
-                      <div className="flex items-center justify-end gap-2 text-foreground">
-                        <Thermometer className="h-5 w-5 text-muted-foreground" />
-                        <span className="font-heading">Feels like {formatTemperature(current.feels_like, unit)}</span>
-                      </div>
-                      <div className="flex items-center justify-end gap-2">
-                        <span className="font-heading text-sm text-muted-foreground">
-                          H: {formatTemperature(today.temp.max, unit)} / L:{' '}
-                          {formatTemperature(today.temp.min, unit)}
-                        </span>
-                      </div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground sm:text-base">
+                      <Thermometer className="h-4 w-4 sm:h-5 sm:w-5" />
+                      <span className="font-heading">Feels like {formatTemperature(current.feels_like, unit)}</span>
                     </div>
+                    <p className="font-heading text-lg capitalize text-muted-foreground sm:text-xl md:text-2xl">
+                      {today.condition.description}
+                    </p>
                   </div>
 
                   {/* Bottom Section - Stats */}
@@ -568,6 +685,7 @@ function App() {
         <DayDetailsDialog
           day={selectedDay}
           unit={unit}
+          location={current ? { city: current.city, country: current.country } : null}
           onClose={() => setSelectedDay(null)}
         />
       </div>
