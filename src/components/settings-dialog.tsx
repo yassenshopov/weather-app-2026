@@ -10,8 +10,8 @@ import {
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { useTheme } from '@/components/theme-provider';
-import type { Theme } from '@/components/theme-provider';
+import { useTheme } from '@/components/theme-context';
+import type { Theme } from '@/components/theme-context';
 import type { AppSettings } from '@/types/settings';
 
 type SettingsDialogProps = {

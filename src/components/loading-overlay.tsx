@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 
@@ -15,24 +15,16 @@ function LoadingOverlay({
   text = 'Fetching weather data...',
   onComplete,
 }: LoadingOverlayProps) {
-  const [show, setShow] = useState(false);
-
   useEffect(() => {
-    if (isVisible) {
-      setShow(true);
-      const timer = setTimeout(() => {
-        setShow(false);
-        onComplete?.();
-      }, duration);
+    if (!isVisible) return;
+    const timer = setTimeout(() => {
+      onComplete?.();
+    }, duration);
 
-      return () => clearTimeout(timer);
-    } else {
-      // Hide overlay immediately when isVisible becomes false (e.g., on error)
-      setShow(false);
-    }
+    return () => clearTimeout(timer);
   }, [isVisible, duration, onComplete]);
 
-  if (!show) return null;
+  if (!isVisible) return null;
 
   return (
     <div
