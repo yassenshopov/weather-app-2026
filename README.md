@@ -41,3 +41,7 @@ VITE_OPENWEATHER_API_KEY=your_openweather_api_key_here
 - shadcn/ui components
 - lucide-react icons
 - OpenWeather API
+
+## AI usage
+
+Opus 4.5 and GPT 5.2 Codex were used for rapid iteration on component layouts, API integration, and test scaffolding. AI-generated output was reviewed, adjusted to match the data model and UI requirements, and validated through manual testing and unit tests.
