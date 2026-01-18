@@ -85,6 +85,7 @@ export function processForecastData(data: ForecastResponse): {
     const humidities = items.map((item) => item.main.humidity);
     const windSpeeds = items.map((item) => item.wind.speed);
     const pops = items.map((item) => item.pop);
+    const hourlyItems = [...items].sort((a, b) => a.dt - b.dt);
     
     // Get the most common weather condition (around midday if possible)
     const middayItem = items.find((item) => {
@@ -104,6 +105,15 @@ export function processForecastData(data: ForecastResponse): {
       windSpeed: Math.round((windSpeeds.reduce((a, b) => a + b, 0) / windSpeeds.length) * 10) / 10,
       condition: middayItem.weather[0],
       pop: Math.round(Math.max(...pops) * 100),
+      hourly: hourlyItems.map((item) => ({
+        time: new Date(item.dt * 1000),
+        temp: Math.round(item.main.temp),
+        feelsLike: Math.round(item.main.feels_like),
+        humidity: item.main.humidity,
+        windSpeed: Math.round(item.wind.speed * 10) / 10,
+        pop: Math.round(item.pop * 100),
+        condition: item.weather[0],
+      })),
     });
   });
   

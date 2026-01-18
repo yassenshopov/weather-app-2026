@@ -3,16 +3,18 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { getWeatherIcon } from '@/components/weather-icon';
 import { WeatherIndicator } from '@/components/weather-indicator';
 import type { DailyForecast } from '@/types/weather';
-import { formatTemperature, formatWindSpeed } from '@/utils/weather';
+import { formatTemperature, formatWindSpeed, formatTime, getLocalTime } from '@/utils/weather';
 
 type DayDetailsDialogProps = {
   day: DailyForecast | null;
   unit: 'metric' | 'imperial';
   location: { city: string; country: string } | null;
+  timezone: number | null;
+  timeFormat: '12h' | '24h';
   onClose: () => void;
 };
 
-export function DayDetailsDialog({ day, unit, location, onClose }: DayDetailsDialogProps) {
+export function DayDetailsDialog({ day, unit, location, timezone, timeFormat, onClose }: DayDetailsDialogProps) {
   if (!day) {
     return null;
   }
@@ -22,6 +24,16 @@ export function DayDetailsDialog({ day, unit, location, onClose }: DayDetailsDia
     month: 'short',
     day: 'numeric',
   });
+  const hourlyForecasts = day.hourly ?? [];
+  const localNow = timezone !== null ? getLocalTime(timezone, new Date()) : new Date();
+  const localDayDate = timezone !== null ? getLocalTime(timezone, day.date) : day.date;
+  const isToday = localDayDate.toDateString() === localNow.toDateString();
+  const firstForecastTime = hourlyForecasts[0]
+    ? timezone !== null
+      ? getLocalTime(timezone, hourlyForecasts[0].time)
+      : hourlyForecasts[0].time
+    : null;
+  const isBeforeFirstForecast = firstForecastTime ? localNow < firstForecastTime : false;
 
   return (
     <Dialog open={!!day} onOpenChange={(open) => (!open ? onClose() : undefined)}>
@@ -76,29 +88,67 @@ export function DayDetailsDialog({ day, unit, location, onClose }: DayDetailsDia
               </p>
             </div>
 
-            <div className="mt-auto grid grid-cols-3 gap-2 sm:gap-3">
-              <div className="flex items-center gap-2 rounded-lg bg-muted/50 p-3 sm:gap-3 sm:p-4">
-                <Droplets className="h-5 w-5 text-primary sm:h-6 sm:w-6" />
-                <div>
-                  <p className="text-xs text-muted-foreground sm:text-sm">Humidity</p>
-                  <p className="font-heading text-sm font-semibold text-foreground sm:text-base">{day.humidity}%</p>
+            <div className="mt-8">
+              <h3 className="font-heading text-sm font-semibold text-foreground sm:text-base">Hourly details</h3>
+              {hourlyForecasts.length === 0 ? (
+                <p className="mt-2 text-sm text-muted-foreground">Hourly details are unavailable for this day.</p>
+              ) : (
+                <div className="mt-3 max-h-72 overflow-y-auto overflow-x-auto pb-2 sm:max-h-none sm:overflow-y-visible">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
+                    {hourlyForecasts.map((hour, index) => {
+                      const localTime = timezone !== null ? getLocalTime(timezone, hour.time) : hour.time;
+                      const nextHour = hourlyForecasts[index + 1];
+                      const localNextTime = nextHour
+                        ? timezone !== null
+                          ? getLocalTime(timezone, nextHour.time)
+                          : nextHour.time
+                        : null;
+                      const isCurrentSlot = isToday
+                        ? isBeforeFirstForecast
+                          ? index === 0
+                          : localNow >= localTime && (localNextTime ? localNow < localNextTime : true)
+                        : false;
+                      return (
+                        <div
+                          key={hour.time.toISOString()}
+                          className={`w-full rounded-lg border p-2 sm:min-w-[8.5rem] sm:p-3 ${
+                            isCurrentSlot ? 'border-primary/40 bg-primary/10' : 'border-muted/40 bg-muted/30'
+                          }`}
+                        >
+                          <div className="flex flex-col gap-2 text-xs text-muted-foreground">
+                            <div className="flex items-center justify-between gap-2 sm:flex-col sm:items-start sm:gap-2">
+                              <p className="font-heading text-sm font-semibold text-foreground">
+                                {formatTime(localTime, timeFormat)}
+                              </p>
+                              <div className="text-primary">{getWeatherIcon(hour.condition.id, 'h-6 w-6')}</div>
+                            </div>
+                            <p className="text-xs capitalize text-muted-foreground">{hour.condition.description}</p>
+                            <p className="font-heading text-sm font-semibold text-foreground">
+                              {formatTemperature(hour.temp, unit)}
+                            </p>
+                            <div className="flex flex-wrap items-center gap-3">
+                              <span className="inline-flex items-center gap-1">
+                                <Wind className="h-3.5 w-3.5 text-primary/70" />
+                                {formatWindSpeed(hour.windSpeed, unit)}
+                              </span>
+                              <span className="inline-flex items-center gap-1">
+                                <Droplets className="h-3.5 w-3.5 text-primary/70" />
+                                {hour.humidity}%
+                              </span>
+                              <span className="inline-flex items-center gap-1">
+                                <CloudRain className="h-3.5 w-3.5 text-primary/70" />
+                                {hour.pop}%
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-2 rounded-lg bg-muted/50 p-3 sm:gap-3 sm:p-4">
-                <Wind className="h-5 w-5 text-primary sm:h-6 sm:w-6" />
-                <div>
-                  <p className="text-xs text-muted-foreground sm:text-sm">Wind</p>
-                  <p className="font-heading text-sm font-semibold text-foreground sm:text-base">{formatWindSpeed(day.windSpeed, unit)}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 rounded-lg bg-muted/50 p-3 sm:gap-3 sm:p-4">
-                <CloudRain className="h-5 w-5 text-primary sm:h-6 sm:w-6" />
-                <div>
-                  <p className="text-xs text-muted-foreground sm:text-sm">Rain</p>
-                  <p className="font-heading text-sm font-semibold text-foreground sm:text-base">{day.pop}%</p>
-                </div>
-              </div>
+              )}
             </div>
+
           </div>
         </div>
       </DialogContent>

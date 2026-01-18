@@ -59,6 +59,16 @@ export interface ForecastResponse {
   city: City;
 }
 
+export interface HourlyForecast {
+  time: Date;
+  temp: number;
+  feelsLike: number;
+  humidity: number;
+  windSpeed: number;
+  pop: number;
+  condition: WeatherCondition;
+}
+
 export interface DailyForecast {
   date: Date;
   dayName: string;
@@ -71,6 +81,7 @@ export interface DailyForecast {
   windSpeed: number;
   condition: WeatherCondition;
   pop: number; // Max probability of precipitation for the day
+  hourly: HourlyForecast[];
 }
 
 export interface CurrentWeather {

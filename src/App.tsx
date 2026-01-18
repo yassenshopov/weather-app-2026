@@ -686,6 +686,8 @@ function App() {
           day={selectedDay}
           unit={unit}
           location={current ? { city: current.city, country: current.country } : null}
+          timezone={current ? current.timezone : null}
+          timeFormat={settings.timeFormat}
           onClose={() => setSelectedDay(null)}
         />
       </div>
